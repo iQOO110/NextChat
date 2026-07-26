@@ -164,7 +164,7 @@ export function Settings() {
                       } else {
                         throw new Error("No model data");
                       }
-                    } catch (err)
+                    } catch (err){
                       console.error(err);
                       showToast(Locale.Settings.ModelLoadFail);
                     }
