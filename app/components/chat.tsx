@@ -535,16 +535,7 @@ export function ChatActions(props: {
     return filteredModels.filter((m) => m.provider?.providerName === 'OpenAI');
 }, [allModels]);
 
-    if (defaultModel) {
-      const arr = [
-        defaultModel,
-        ...filteredModels.filter((m) => m !== defaultModel),
-      ];
-      return arr;
-    } else {
-      return filteredModels;
-    }
-  }, [allModels]);
+    
   const currentModelName = useMemo(() => {
     const model = models.find(
       (m) =>
