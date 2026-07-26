@@ -9,7 +9,60 @@ export const RELEASE_URL = `${REPO_URL}/releases`;
 export const FETCH_COMMIT_URL = `https://api.github.com/repos/${OWNER}/${REPO}/commits?per_page=1`;
 export const FETCH_TAG_URL = `https://api.github.com/repos/${OWNER}/${REPO}/tags?per_page=1`;
 export const RUNTIME_CONFIG_DOM = "danger-runtime-config";
+// ========== 以下常量需要保留 ==========
 
+// SaaS 跳转链接（auth.tsx 需要）
+export const SAAS_CHAT_URL = "https://nextchat.club";
+export const SAAS_CHAT_UTM_URL = "https://nextchat.club?utm=github";
+
+// TTS 相关（chat.tsx 需要）
+export const DEFAULT_TTS_ENGINE = "OpenAI-TTS";
+export const DEFAULT_TTS_ENGINES = ["OpenAI-TTS", "Edge-TTS"];
+export const DEFAULT_TTS_MODEL = "tts-1";
+export const DEFAULT_TTS_VOICE = "alloy";
+export const DEFAULT_TTS_MODELS = ["tts-1", "tts-1-hd"];
+export const DEFAULT_TTS_VOICES = [
+  "alloy", "echo", "fable", "onyx", "nova", "shimmer"
+];
+
+// 摘要模型（chat.tsx 的 summarizeSession 中用到）
+export const SUMMARIZE_MODEL = "gpt-4o-mini";
+export const GEMINI_SUMMARIZE_MODEL = "gemini-pro";       // 若不用 Google 可保留但不影响
+export const DEEPSEEK_SUMMARIZE_MODEL = "deepseek-chat"; // 若不用 DeepSeek 可保留
+
+// 输入模板（chat.tsx 中可能用到）
+export const DEFAULT_INPUT_TEMPLATE = `{{input}}`;
+export const DEFAULT_SYSTEM_TEMPLATE = `
+You are ChatGPT, a large language model trained by {{ServiceProvider}}.
+Knowledge cutoff: {{cutoff}}
+Current model: {{model}}
+Current time: {{time}}
+Latex inline: \\(x^2\\) 
+Latex block: $$e=mc^2$$
+`;
+
+// 知识截止日期（chat.tsx 中用到）
+export const KnowledgeCutOffDate: Record<string, string> = {
+  default: "2021-09",
+  "gpt-4-turbo": "2023-12",
+  // ... 可以只保留几个常用的，或全部保留（不影响厂商）
+  "gpt-4o": "2023-10",
+  "gpt-4o-mini": "2023-10",
+  // 其他模型根据需求添加，但至少保留 default
+};
+
+// 其他可能缺失的常量（根据错误提示补充）
+export const REQUEST_TIMEOUT_MS = 60000;
+export const REQUEST_TIMEOUT_MS_FOR_THINKING = REQUEST_TIMEOUT_MS * 5;
+export const CHAT_PAGE_SIZE = 15;
+export const MAX_RENDER_MSG_COUNT = 45;
+export const EXPORT_MESSAGE_CLASS_NAME = "export-markdown";
+export const UNFINISHED_INPUT = (id: string) => "unfinished-input-" + id;
+export const LAST_INPUT_KEY = "last-input";
+export const DEFAULT_SIDEBAR_WIDTH = 300;
+export const MAX_SIDEBAR_WIDTH = 500;
+export const MIN_SIDEBAR_WIDTH = 230;
+export const NARROW_SIDEBAR_WIDTH = 100;
 export const OPENAI_BASE_URL = "https://api.openai.com";
 export const ACCESS_CODE_PREFIX = "ak-";
 
