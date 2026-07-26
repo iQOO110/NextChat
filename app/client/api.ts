@@ -33,3 +33,9 @@ export class ClientApi {
 export function getClientApi(provider?: any): ClientApi {
   return new ClientApi(ModelProvider.GPT);
 }
+export abstract class LLMApi {
+  abstract chat(options: ChatOptions): Promise<void>;
+  abstract speech(options: SpeechOptions): Promise<ArrayBuffer>;
+  abstract usage(): Promise<LLMUsage>;
+  abstract models(): Promise<LLMModel[]>;
+}
