@@ -23,7 +23,7 @@ export async function handle(
   }
   const cleanBase = targetBaseUrl.replace(/\/$/, "");
   const targetUrl = `${cleanBase}/${subpath}${req.nextUrl.search}`;
-  console("[Custom OpenAI Proxy] Forward =>", targetUrl);
+  console.log("[Custom OpenAI Proxy] Forward =>", targetUrl);
   try {
     const fetchHeaders: HeadersInit = {
       "Content-Type": "application/json",
