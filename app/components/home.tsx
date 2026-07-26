@@ -71,9 +71,7 @@ const SearchChat = dynamic(
   },
 );
 
-const Sd = dynamic(async () => (await import("./sd")).Sd, {
-  loading: () => <Loading noLogo />,
-});
+
 
 const McpMarketPage = dynamic(
   async () => (await import("./mcp-market")).McpMarketPage,
