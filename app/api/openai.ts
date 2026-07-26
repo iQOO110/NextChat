@@ -1,78 +1,62 @@
-import { type OpenAIListModelResponse } from "@/app/client/platforms/openai";
-import { getServerSideConfig } from "@/app/config/server";
-import { ModelProvider, OpenaiPath } from "@/app/constant";
-import { prettyObject } from "@/app/utils/format";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "./auth";
-import { requestOpenai } from "./common";
-
-const ALLOWED_PATH = new Set(Object.values(OpenaiPath));
-
-function getModels(remoteModelRes: OpenAIListModelResponse) {
-  const config = getServerSideConfig();
-
-  if (config.disableGPT4) {
-    remoteModelRes.data = remoteModelRes.data.filter(
-      (m) =>
-        !(
-          m.id.startsWith("gpt-4") ||
-          m.id.startsWith("chatgpt-4o") ||
-          m.id.startsWith("o1") ||
-          m.id.startsWith("o3")
-        ) || m.id.startsWith("gpt-4o-mini"),
-    );
-  }
-
-  return remoteModelRes;
-}
-
+import { OpenaiPath } from "@/app/constant";
+const ALLOWED_PATHS = new Set(Object.values(OpenaiPath));
+const SAFE_URL_RULE = /^(https?:\/\/)(?!127\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.|192\.168|localhost|::1)/;
 export async function handle(
   req: NextRequest,
   { params }: { params: { path: string[] } },
 ) {
-  console.log("[OpenAI Route] params ", params);
-
   if (req.method === "OPTIONS") {
-    return NextResponse.json({ body: "OK" }, { status: 200 });
+    return NextResponse.json({ ok: true }, { status: 200 });
   }
-
   const subpath = params.path.join("/");
-
-  if (!ALLOWED_PATH.has(subpath)) {
-    console.log("[OpenAI Route] forbidden path ", subpath);
-    return NextResponse.json(
-      {
-        error: true,
-        msg: "you are not allowed to request " + subpath,
-      },
-      {
-        status: 403,
-      },
-    );
+  if (!ALLOWED_PATHS.has(subpath)) {
+    return NextResponse.json({ error: "Forbidden API Path" }, { status: 403 });
   }
-
-  const authResult = auth(req, ModelProvider.GPT);
-  if (authResult.error) {
-    return NextResponse.json(authResult, {
-      status: 401,
-    });
+  const targetBaseUrl = req.headers.get("X-Custom-Url");
+  const targetApiKey = req.headers.get("X-Custom-Token");
+  if (!targetBaseUrl || !targetApiKey) {
+    return NextResponse.json({ error: "Missing API Url or API Key" }, { status: 400 });
   }
-
+  if (!SAFE_URL_RULE.test(targetBaseUrl)) {
+    return NextResponse.json({ error: "Internal network address is prohibited" }, { status: 403 });
+  }
+  const cleanBase = targetBaseUrl.replace(/\/$/, "");
+  const targetUrl = `${cleanBase}/${subpath}${req.nextUrl.search}`;
+  console("[Custom OpenAI Proxy] Forward =>", targetUrl);
   try {
-    const response = await requestOpenai(req);
-
-    // list models
-    if (subpath === OpenaiPath.ListModelPath && response.status === 200) {
-      const resJson = (await response.json()) as OpenAIListModelResponse;
-      const availableModels = getModels(resJson);
-      return NextResponse.json(availableModels, {
-        status: response.status,
-      });
+    const fetchHeaders: HeadersInit = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${targetApiKey}`,
+    };
+    const fetchOpts: RequestInit = {
+      method: req.method,
+      headers: fetchHeaders,
+      signal: req.signal,
+      body: ["GET", "HEAD"].includes(req.method) ? null : req.body,
+    };
+    const upstreamRes = await fetch(targetUrl, fetchOpts);
+    let resData: unknown = null;
+    try {
+      resData = await upstreamRes.json();
+    } catch {}
+    if (subpath === OpenaiPath.ListModelPath && resData && typeof resData === "object" && "data" in resData) {
+      return NextResponse.json(resData, { status: upstreamRes.status });
     }
-
-    return response;
-  } catch (e) {
-    console.error("[OpenAI] ", e);
-    return NextResponse.json(prettyObject(e));
+    const responseHeaders = new Headers();
+    responseHeaders.set("Content-Type", "application/json; charset=utf-8");
+    responseHeaders.set("X-Accel-Buffering", "no");
+    responseHeaders.delete("www-authenticate");
+    return new Response(JSON.stringify(resData), {
+      status: upstreamRes.status,
+      headers: responseHeaders,
+    });
+  } catch (err: any) {
+    console.error("[Proxy Request Error]", err);
+    return NextResponse.json({ error: err.message || "Proxy Gateway Error" }, { status: 502 });
   }
 }
+export const GET = handle;
+export const POST = handle;
+export const OPTIONS = handle;
+export const runtime = "edge";
